@@ -79,6 +79,7 @@ app.post("/", upload, (req, res) => {
     ValidTillDate: tomorrow,
     fileId: id,
     encryptedFileName: req.file.filename,
+    senderName: "Harsini",
   });
   console.log(fileInfo);
   //fileInfo.save();

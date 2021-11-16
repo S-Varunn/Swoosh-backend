@@ -13,6 +13,7 @@ const fileSchema = new Schema(
     ValidTillDate: { type: String, required: true },
     fileId: { type: Schema.Types.ObjectId, required: true },
     encryptedFileName: { type: String, required: true },
+    senderName: { type: String, required: false },
   },
   { timestamps: true }
 );

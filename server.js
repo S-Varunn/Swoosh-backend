@@ -32,14 +32,12 @@ const storage = new GridFsStorage({
         if (err) {
           return reject(err);
         }
-        const originalname = file.originalname;
         filename = buf.toString("hex") + path.extname(file.originalname);
         const fileInfo = {
           filename: filename,
           bucketName: "fs",
         };
-        console.log(originalname);
-        console.log(filename);
+
         resolve(fileInfo);
       });
     });
@@ -72,26 +70,27 @@ const getFileExtension = (completeFilename) => {
 const today = new Date();
 const tomorrow = new Date(today);
 tomorrow.setDate(tomorrow.getDate() + 1);
+let sender;
+let validTill;
+app.post("/userData", function (req, res) {
+  sender = req.body.senderName;
+  validTill = req.body.validTill;
+});
 
 app.post("/", upload, (req, res) => {
   const { file } = req;
   const { id } = file;
-  console.log("the file uploaded id is:" + id);
-
   const fileInfo = new File({
     originalFilename: req.file.originalname,
     fileSize: fileSizeFormatter(req.file.size, 2),
     fileType: req.file.mimetype,
     UploadedDate: req.file.uploadDate,
-    ValidTillDate: tomorrow,
+    ValidTillDate: validTill,
     fileId: id,
     encryptedFileName: req.file.filename,
-    senderName: "Harsini",
+    senderName: sender,
     iconFileFormat: getFileExtension(req.file.filename),
   });
-  console.log(fileInfo);
-  //fileInfo.save();
-
   fileInfo.save(function (err, result) {
     if (err) {
       console.log(err);
@@ -99,11 +98,6 @@ app.post("/", upload, (req, res) => {
       console.log(result);
     }
   });
-  //const { file } = req;
-  // const { id } = file;
-  //console.log(id);
-  //const _id = new mongoose.Types.ObjectId(id);
-  // console.log(_id);
   res.json({ file: req.file });
 });
 

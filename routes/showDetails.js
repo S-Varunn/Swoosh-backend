@@ -24,7 +24,6 @@ router.get("/:filename", (req, res) => {
       return res.status(400).json({ err: "no file exists" });
     }
     fetchFileData = file._id;
-    console.log(fetchFileData);
     return res.json(file);
   });
 });

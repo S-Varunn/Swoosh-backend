@@ -10,7 +10,7 @@ const fileSchema = new Schema(
     fileSize: { type: String, required: true },
     fileType: { type: String, required: true },
     UploadedDate: { type: String, required: true },
-    ValidTillDate: { type: String, required: true },
+    ValidTillDate: { type: String, required: false },
     fileId: { type: Schema.Types.ObjectId, required: true },
     encryptedFileName: { type: String, required: true },
     senderName: { type: String, required: false },

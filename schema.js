@@ -14,6 +14,7 @@ const fileSchema = new Schema(
     fileId: { type: Schema.Types.ObjectId, required: true },
     encryptedFileName: { type: String, required: true },
     senderName: { type: String, required: false },
+    iconFileFormat: { type: String, required: true },
   },
   { timestamps: true }
 );

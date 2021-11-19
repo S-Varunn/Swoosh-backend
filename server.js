@@ -62,6 +62,13 @@ const fileSizeFormatter = (bytes, decimal) => {
   );
 };
 
+const getFileExtension = (completeFilename) => {
+  var extension = completeFilename.substring(
+    completeFilename.lastIndexOf(".") + 1
+  );
+  return extension;
+};
+
 const today = new Date();
 const tomorrow = new Date(today);
 tomorrow.setDate(tomorrow.getDate() + 1);
@@ -80,6 +87,7 @@ app.post("/", upload, (req, res) => {
     fileId: id,
     encryptedFileName: req.file.filename,
     senderName: "Harsini",
+    iconFileFormat: getFileExtension(req.file.filename),
   });
   console.log(fileInfo);
   //fileInfo.save();

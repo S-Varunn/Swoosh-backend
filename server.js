@@ -21,6 +21,15 @@ let filename;
 const PORT = process.env.PORT || 8000;
 const URI = process.env.MONGO_CONNECTION_URL;
 
+const conn = mongoose.createConnection(process.env.MONGO_CONNECTION_URL);
+
+let gfs;
+conn.once("open", () => {
+  //Init stream
+  gfs = Grid(conn.db, mongoose.mongo);
+  gfs.collection("fs");
+});
+
 app.use(cors());
 
 //create storage engine
@@ -72,6 +81,7 @@ const tomorrow = new Date(today);
 tomorrow.setDate(tomorrow.getDate() + 1);
 let sender;
 let validTill;
+
 app.post("/userData", function (req, res) {
   sender = req.body.senderName;
   validTill = req.body.validTill;
@@ -95,13 +105,20 @@ app.post("/", upload, (req, res) => {
     if (err) {
       console.log(err);
     } else {
-      console.log(result);
+      //  console.log(result);
     }
   });
   res.json({ file: req.file });
 });
 
-app.get("/download", (req, res) => {
+app.get("/getLink", function (req, res) {
+  res.json({
+    success: true,
+    download: `http://localhost:3000/download?filename=${filename}`,
+  });
+});
+
+app.get("/downloads/:filename", (req, res) => {
   mongoose.connect(URI, function (error, db) {
     assert.ifError(error);
 
@@ -110,8 +127,8 @@ app.get("/download", (req, res) => {
       bucketName: "fs",
     });
     gridfsbucket
-      .openDownloadStreamByName("39d94b014b03dabe795b3b3eed16e0a2.jpg")
-      .pipe(fs.createWriteStream("./39d94b014b03dabe795b3b3eed16e0a2.jpg"))
+      .openDownloadStreamByName(req.params.filename)
+      .pipe(fs.createWriteStream(`./downloadedFiles/${req.params.filename}`))
       .on("error", () => {
         console.log("Some error occurred in download:" + error);
         res.send(error);
@@ -123,13 +140,19 @@ app.get("/download", (req, res) => {
   });
 });
 
-app.get("/getLink", function (req, res) {
-  res.json({
-    success: true,
-    download: `http://localhost:3000/download?filename=${filename}`,
-  });
-});
+app.get("/getFile/:filename", async (req, res) => {
+  // Extract link and get file from storage send download stream
+  const file = await File.findOne({ filename: req.params.filename });
+  // Link expired
+  if (!file) {
+    return res.render("download", { error: "Link has been expired." });
+  }
 
+  const response = await file.save();
+  const filePath = `${__dirname}/../Swoosh-backend/downloadedFiles/${req.params.filename}`;
+  /* res.download(filePath); */
+  res.send(filePath);
+});
 /* let fetchFileData; */
 
 /* app.get("/myUploadedfiles/:filename", (req, res) => {
@@ -158,6 +181,7 @@ app.get("/myInfo", async (req, res) => {
 }); */
 
 app.use("/showDetails", require("./routes/showDetails"));
+app.use("/downloadFile", require("./routes/downloadFile"));
 
 app.listen(PORT, function () {
   console.log("App running on port " + PORT);

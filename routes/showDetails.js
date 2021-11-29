@@ -40,4 +40,31 @@ router.get("/myInfo/:filename", async (req, res) => {
     return res.json({ err: "some error" });
   }
 });
+
+/* router.get("/delete/:filename", async (req, res) => {
+  try {
+    await gfs2.files.deleteOne({
+      filename: req.params.filename,
+    });
+
+    return res.json({ err: "file deleted" });
+  } catch (err) {
+    return res.json({ err: "some error" });
+  }
+}); */
+
+/* router.get("/delete", async (req, res) => {
+  try {
+    const deleteid = { filename: "9d66292f4700b5df39cbfefba48c755e.png" };
+    const result = await gfs.deleteOne(deleteid);
+    if (result.deletedCount === 1) {
+      console.log("Successfully deleted one document.");
+    } else {
+      console.log("No documents matched the query. Deleted 0 documents.");
+    }
+  } catch (err) {
+    return res.json({ err: "some error" });
+  }
+}); */
+
 module.exports = router;

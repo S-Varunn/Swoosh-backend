@@ -118,7 +118,7 @@ app.get("/getLink", function (req, res) {
   });
 });
 
-app.get("/downloads/:filename", (req, res) => {
+app.get("/downloaded/:filename", (req, res) => {
   mongoose.connect(URI, function (error, db) {
     assert.ifError(error);
 
@@ -126,17 +126,9 @@ app.get("/downloads/:filename", (req, res) => {
       chunkSizeBytes: 1024,
       bucketName: "fs",
     });
-    gridfsbucket
-      .openDownloadStreamByName(req.params.filename)
-      .pipe(fs.createWriteStream(`./downloadedFiles/${req.params.filename}`))
-      .on("error", () => {
-        console.log("Some error occurred in download:" + error);
-        res.send(error);
-      })
-      .on("finish", () => {
-        console.log("done downloading");
-        res.send("Done Downloading");
-      });
+
+    res.setHeader("Content-Type", "blob");
+    gridfsbucket.openDownloadStreamByName(req.params.filename).pipe(res);
   });
 });
 
@@ -155,30 +147,14 @@ app.get("/getFile/:filename", async (req, res) => {
 });
 /* let fetchFileData; */
 
-/* app.get("/myUploadedfiles/:filename", (req, res) => {
-  gfs2.files.findOne({ filename: req.params.filename }, (err, file) => {
-    if (!file || file.length === 0) {
-      return res.status(400).json({ err: "no file exists" });
+const handleDownload = () => {
+  Axios.get(`${initObject.url}/download`, { responseType: "blob" }).then(
+    (response) => {
+      FileSaver.saveAs(response.data, "mydata");
+      console.log(response);
     }
-    fetchFileData = file._id;
-    console.log(fetchFileData);
-    return res.json(file);
-  });
-});
-
-app.get("/myInfo", async (req, res) => {
-  try {
-    const file = await File.findOne({
-      _id: "618ba3bd57eae41f9e3eede2",
-    });
-    if (!file) {
-      return res.render("download", { error: "No file" });
-    }
-    return res.json(file);
-  } catch (err) {
-    return res.json({ err: "some error" });
-  }
-}); */
+  );
+};
 
 app.use("/showDetails", require("./routes/showDetails"));
 app.use("/downloadFile", require("./routes/downloadFile"));

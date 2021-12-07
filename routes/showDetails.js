@@ -18,25 +18,22 @@ conn.once("open", () => {
   gfs = new mongoose.mongo.GridFSBucket(conn.db, { bucketName: "fs" });
 });
 
-router.get("/:filename", (req, res) => {
-  gfs2.files.findOne({ filename: req.params.filename }, (err, file) => {
-    if (!file || file.length === 0) {
-      return res.status(400).json({ err: "no file exists" });
-    }
-    fetchFileData = file._id;
-    return res.json(file);
-  });
-});
-
 router.get("/myInfo/:filename", async (req, res) => {
   try {
     const file = await File.findOne({
       encryptedFileName: req.params.filename,
     });
-
+    let currentdate = new Date().toLocaleString();
+    let objDate = new Date(file.ValidTillDate).toLocaleString();
+    if (objDate < currentdate) {
+      return res.status(410).json({ message: "Your link has expired" });
+    }
+    if (file == null) {
+      return res.status(404).json({ message: "Unable to access file details" });
+    }
     return res.json(file);
   } catch (err) {
-    return res.json({ err: "some error" });
+    return res.json({ err: "Some error" });
   }
 });
 

@@ -84,8 +84,8 @@ const getFileExtension = (completeFilename) => {
 const today = new Date();
 const tomorrow = new Date(today);
 tomorrow.setDate(tomorrow.getDate() + 1);
-let sender;
-let validTill;
+let sender = "Anonymous";
+let validTill = tomorrow;
 
 app.post("/userData", function (req, res) {
   sender = req.body.senderName;
@@ -108,12 +108,13 @@ app.post("/", upload, (req, res) => {
   });
   fileInfo.save(function (err, result) {
     if (err) {
+      res.status(503).json({ message: "Unable to process request" });
       console.log(err);
     } else {
-      //  console.log(result);
+      res.status(200).json({ message: "File uploaded" });
     }
   });
-  res.json({ file: req.file });
+  //res.json({ file: req.file });
 });
 
 app.get("/getLink", function (req, res) {
@@ -126,14 +127,20 @@ app.get("/getLink", function (req, res) {
 app.get("/downloaded/:filename", (req, res) => {
   mongoose.connect(URI, function (error, db) {
     assert.ifError(error);
-
     var gridfsbucket = new mongodb.GridFSBucket(db, {
       chunkSizeBytes: 1024,
       bucketName: "fs",
     });
-
     res.setHeader("Content-Type", "blob");
-    gridfsbucket.openDownloadStreamByName(req.params.filename).pipe(res);
+    gridfsbucket
+      .openDownloadStreamByName(req.params.filename)
+      .on("error", function (error) {
+        res.status(503).json({ message: "Try again later", time: 5 });
+      })
+      .on("finish", function () {
+        res.status(200).json({ message: "Success" });
+      })
+      .pipe(res);
   });
 });
 

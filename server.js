@@ -14,6 +14,7 @@ var assert = require("assert");
 var cors = require("cors");
 var mongodb = require("mongodb");
 var fs = require("fs");
+const schedule = require("node-schedule");
 
 const File = require("./schema");
 let filename;
@@ -22,12 +23,16 @@ const PORT = process.env.PORT || 8000;
 const URI = process.env.MONGO_CONNECTION_URL;
 
 const conn = mongoose.createConnection(process.env.MONGO_CONNECTION_URL);
-
+var GridFS = Grid(conn, mongoose.mongo);
 let gfs;
+
 conn.once("open", () => {
   //Init stream
-  gfs = Grid(conn.db, mongoose.mongo);
-  gfs.collection("fs");
+  /* gfs = Grid(conn.db, mongoose.mongo);
+  gfs.collection("fs"); */
+  gfs = new mongoose.mongo.GridFSBucket(conn.db, {
+    bucketName: "fs",
+  });
 });
 
 app.use(cors());
@@ -132,29 +137,28 @@ app.get("/downloaded/:filename", (req, res) => {
   });
 });
 
-app.get("/getFile/:filename", async (req, res) => {
-  // Extract link and get file from storage send download stream
-  const file = await File.findOne({ filename: req.params.filename });
-  // Link expired
-  if (!file) {
-    return res.render("download", { error: "Link has been expired." });
-  }
-
-  const response = await file.save();
-  const filePath = `${__dirname}/../Swoosh-backend/downloadedFiles/${req.params.filename}`;
-  /* res.download(filePath); */
-  res.send(filePath);
+schedule.scheduleJob("* */3 * * *", function () {
+  File.find().then((data) => {
+    let currentdate = new Date().toLocaleString();
+    data.map((obj) => {
+      let objDate = new Date(obj.ValidTillDate).toLocaleString();
+      if (currentdate > objDate) {
+        console.log(obj._id);
+        let fileId = obj.fileId;
+        let fname = obj.encryptedFileName;
+        console.log(fileId);
+        File.deleteOne({ _id: obj._id }, function (err) {
+          if (err) {
+            console.log(err);
+          }
+        });
+        const obj_id = new mongoose.Types.ObjectId(fileId);
+        gfs.delete(obj_id);
+        console.log({ msg: "deletion successss" });
+      }
+    });
+  });
 });
-/* let fetchFileData; */
-
-const handleDownload = () => {
-  Axios.get(`${initObject.url}/download`, { responseType: "blob" }).then(
-    (response) => {
-      FileSaver.saveAs(response.data, "mydata");
-      console.log(response);
-    }
-  );
-};
 
 app.use("/showDetails", require("./routes/showDetails"));
 app.use("/downloadFile", require("./routes/downloadFile"));

@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 mongoose.connect(process.env.MONGO_CONNECTION_URL);
 //var db= mongoose.connection;
 
+//file schema for mongodb upload to avoid unnecessary data upload
 const fileSchema = new Schema(
   {
     originalFilename: { type: String, required: true },

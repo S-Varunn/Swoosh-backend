@@ -13,6 +13,7 @@ var assert = require("assert");
 var cors = require("cors");
 var mongodb = require("mongodb");
 const schedule = require("node-schedule");
+const moment = require("moment");
 
 const File = require("./schema");
 let filename;
@@ -149,14 +150,11 @@ app.get("/downloaded/:filename", (req, res) => {
 //scheduler that deletes the file every 3 hours when validity expires
 schedule.scheduleJob("* */3 * * *", function () {
   File.find().then((data) => {
-    let currentdate = new Date().toLocaleString();
+    let currentdate = moment();
     data.map((obj) => {
-      let objDate = new Date(obj.ValidTillDate).toLocaleString();
-      if (currentdate > objDate) {
-        console.log(obj._id);
+      let objDate = moment(obj.ValidTillDate);
+      if (moment(objDate).diff(currentdate) < 0) {
         let fileId = obj.fileId;
-        let fname = obj.encryptedFileName;
-        console.log(fileId);
         File.deleteOne({ _id: obj._id }, function (err) {
           if (err) {
             console.log(err);

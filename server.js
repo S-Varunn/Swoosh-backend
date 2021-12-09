@@ -122,7 +122,7 @@ app.post("/", upload, (req, res) => {
 app.get("/getLink", function (req, res) {
   res.json({
     success: true,
-    download: `http://localhost:3000/download?filename=${filename}`,
+    download: `https://swoosh-55d68.web.app/download?filename=${filename}`,
   });
 });
 

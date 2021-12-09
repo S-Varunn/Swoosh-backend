@@ -6,24 +6,24 @@ var multer = require("multer");
 const crypto = require("crypto");
 const { GridFsStorage } = require("multer-gridfs-storage");
 var Grid = require("gridfs-stream");
-const bodyParser = require("body-parser");
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 const path = require("path");
 var assert = require("assert");
 var cors = require("cors");
 var mongodb = require("mongodb");
-var fs = require("fs");
 const schedule = require("node-schedule");
 
 const File = require("./schema");
 let filename;
 
+//port connection and getting url from env
 const PORT = process.env.PORT || 8000;
 const URI = process.env.MONGO_CONNECTION_URL;
 
+//establishing connection to grid using mongoose
 const conn = mongoose.createConnection(process.env.MONGO_CONNECTION_URL);
-var GridFS = Grid(conn, mongoose.mongo);
+// var GridFS = Grid(conn, mongoose.mongo);
 let gfs;
 
 conn.once("open", () => {
@@ -58,10 +58,8 @@ const storage = new GridFsStorage({
   },
 });
 const upload = multer({ storage }).single("file");
-//end
 
-//post
-
+//function to calc size of file
 const fileSizeFormatter = (bytes, decimal) => {
   if (bytes === 0) {
     return "0 Bytes";
@@ -73,7 +71,7 @@ const fileSizeFormatter = (bytes, decimal) => {
     parseFloat((bytes / Math.pow(1000, index)).toFixed(dm)) + " " + sizes[index]
   );
 };
-
+//function to format file extension
 const getFileExtension = (completeFilename) => {
   var extension = completeFilename.substring(
     completeFilename.lastIndexOf(".") + 1
@@ -81,17 +79,20 @@ const getFileExtension = (completeFilename) => {
   return extension;
 };
 
+//User info and link expiry date
 const today = new Date();
 const tomorrow = new Date(today);
 tomorrow.setDate(tomorrow.getDate() + 1);
 let sender = "Anonymous";
 let validTill = tomorrow;
 
+//api to get user details from user
 app.post("/userData", function (req, res) {
   sender = req.body.senderName;
   validTill = req.body.validTill;
 });
 
+//file and file details upload to mongodb
 app.post("/", upload, (req, res) => {
   const { file } = req;
   const { id } = file;
@@ -114,9 +115,9 @@ app.post("/", upload, (req, res) => {
       res.status(200).json({ message: "File uploaded" });
     }
   });
-  //res.json({ file: req.file });
 });
 
+//api to get download link
 app.get("/getLink", function (req, res) {
   res.json({
     success: true,
@@ -124,6 +125,7 @@ app.get("/getLink", function (req, res) {
   });
 });
 
+//api to download the file from mongodb
 app.get("/downloaded/:filename", (req, res) => {
   mongoose.connect(URI, function (error, db) {
     assert.ifError(error);
@@ -144,6 +146,7 @@ app.get("/downloaded/:filename", (req, res) => {
   });
 });
 
+//scheduler that deletes the file every 3 hours when validity expires
 schedule.scheduleJob("* */3 * * *", function () {
   File.find().then((data) => {
     let currentdate = new Date().toLocaleString();
@@ -167,8 +170,8 @@ schedule.scheduleJob("* */3 * * *", function () {
   });
 });
 
+//api to fetch file info for download page viewing
 app.use("/showDetails", require("./routes/showDetails"));
-app.use("/downloadFile", require("./routes/downloadFile"));
 
 app.listen(PORT, function () {
   console.log("App running on port " + PORT);

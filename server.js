@@ -148,7 +148,7 @@ app.get("/downloaded/:filename", (req, res) => {
 });
 
 //scheduler that deletes the file every 3 hours when validity expires
-schedule.scheduleJob("* */3 * * *", function () {
+schedule.scheduleJob("0 */3 * * *", function () {
   console.log("In");
   File.find().then((data) => {
     let currentdate = moment();
